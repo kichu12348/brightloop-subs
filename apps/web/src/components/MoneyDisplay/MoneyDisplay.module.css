@@ -1,0 +1,14 @@
+.amount {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.bold {
+  font-weight: var(--font-semibold);
+}
+
+.subtle {
+  color: var(--color-text-secondary);
+}
+

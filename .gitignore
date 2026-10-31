@@ -6,7 +6,6 @@ coverage
 *.lcov
 logs
 *.md
-!AGENTS.md
 *.log
 .env
 .env.*

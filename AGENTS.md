@@ -22,7 +22,7 @@ Hard requirements from the problem statement:
 | Schema and types            | TypeBox (JSON Schema that doubles as TypeScript types) |
 | Database                    | SQLite via `bun:sqlite`, queried through Drizzle ORM   |
 | Scheduling                  | croner                                                 |
-| Web                         | Vite, React, React Router, TanStack Query, CSS Modules |
+| Web                         | Vite, React, React Router, TanStack Query, Zustand, React Icons, CSS Modules |
 | Language                    | TypeScript in strict mode everywhere                   |
 
 ## Layout
@@ -198,7 +198,9 @@ These are the core of the product. Changes to billing code need a test.
 
 ## Frontend
 
-- Server state lives in TanStack Query. Local component state is for UI only. No global store unless a real need appears.
+- Server state lives in TanStack Query. Zustand is used for client UI state: auth session, mobile drawer/sidebar UI state, theme preference, and live WebSocket event feed/toast queue.
+- Route-level code splitting is implemented via `React.lazy` and `Suspense` for all pages.
+- Crisp 1.5px stroke monochrome icons use `react-icons` (specifically `react-icons/lu` or `react-icons/fi`).
 - The API client is one typed module. Components never call `fetch` directly.
 - Every list view handles loading, empty and error states.
 - Forms validate with the same shared TypeBox schema the server uses, via Ajv.
