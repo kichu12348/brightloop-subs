@@ -6,6 +6,7 @@ coverage
 *.lcov
 logs
 *.md
+!README.md
 *.log
 .env
 .env.*
