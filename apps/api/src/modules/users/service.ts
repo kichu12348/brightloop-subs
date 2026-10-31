@@ -14,6 +14,7 @@ export interface UsersServiceDependencies {
 }
 
 export interface UsersService {
+  getUserById(id: string): Promise<UserSummaryRecord>;
   createStaff(data: CreateStaffBody): Promise<UserSummaryRecord>;
   listUsers(query: UsersQuery): Promise<PaginatedResponse<UserSummaryRecord>>;
 }
@@ -22,6 +23,14 @@ export function createUsersService(
   deps: UsersServiceDependencies,
 ): UsersService {
   return {
+    async getUserById(id: string): Promise<UserSummaryRecord> {
+      const user = await deps.repository.findUserById(id);
+      if (!user) {
+        throw new AppError(ErrorCode.NotFound, "User not found", 404);
+      }
+      return user;
+    },
+
     async createStaff(data: CreateStaffBody): Promise<UserSummaryRecord> {
       const normalizedEmail = data.email.toLowerCase().trim();
       const existing = await deps.repository.findUserByEmail(normalizedEmail);

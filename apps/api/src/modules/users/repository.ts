@@ -19,6 +19,7 @@ export interface ListUsersFilter {
 }
 
 export interface UsersRepository {
+  findUserById(id: string): Promise<UserSummaryRecord | null>;
   findUserByEmail(email: string): Promise<UserSummaryRecord | null>;
   createUser(data: {
     id: string;
@@ -66,6 +67,24 @@ export function createSqliteUsersRepository(
   database: AppDatabase,
 ): UsersRepository {
   return {
+    async findUserById(id: string): Promise<UserSummaryRecord | null> {
+      const row = database
+        .select()
+        .from(users)
+        .where(eq(users.id, id))
+        .get();
+      if (!row) {
+        return null;
+      }
+      return {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        role: parseRole(row.role),
+        createdAt: row.createdAt,
+      };
+    },
+
     async findUserByEmail(email: string): Promise<UserSummaryRecord | null> {
       const row = database
         .select()
