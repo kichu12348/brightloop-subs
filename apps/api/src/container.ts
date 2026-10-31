@@ -43,6 +43,28 @@ import {
   type QuotationTemplatesRepository,
   type QuotationTemplatesService,
 } from "./modules/quotationTemplates/index.ts";
+import {
+  createSqliteSubscriptionsRepository,
+  createSubscriptionsService,
+  type SubscriptionsRepository,
+  type SubscriptionsService,
+} from "./modules/subscriptions/index.ts";
+import {
+  createBillingService,
+  type BillingService,
+} from "./modules/billing/index.ts";
+import {
+  createSqliteInvoicesRepository,
+  createInvoicesService,
+  type InvoicesRepository,
+  type InvoicesService,
+} from "./modules/invoices/index.ts";
+import {
+  createSqliteDashboardRepository,
+  createDashboardService,
+  type DashboardRepository,
+  type DashboardService,
+} from "./modules/dashboard/index.ts";
 
 export interface AppDependencies {
   db: AppDatabase;
@@ -65,6 +87,13 @@ export interface AppContainer extends AppDependencies {
   discountsService: DiscountsService;
   quotationTemplatesRepository: QuotationTemplatesRepository;
   quotationTemplatesService: QuotationTemplatesService;
+  subscriptionsRepository: SubscriptionsRepository;
+  subscriptionsService: SubscriptionsService;
+  billingService: BillingService;
+  invoicesRepository: InvoicesRepository;
+  invoicesService: InvoicesService;
+  dashboardRepository: DashboardRepository;
+  dashboardService: DashboardService;
 }
 
 export function createContainer(
@@ -118,6 +147,36 @@ export function createContainer(
     clock,
   });
 
+  const subscriptionsRepository =
+    createSqliteSubscriptionsRepository(database);
+  const subscriptionsService = createSubscriptionsService({
+    repository: subscriptionsRepository,
+    usersService,
+    plansService,
+    productsService,
+    taxesService,
+    discountsService,
+    quotationTemplatesService,
+    clock,
+  });
+
+  const billingService = createBillingService({
+    db: database,
+    clock,
+  });
+
+  const invoicesRepository = createSqliteInvoicesRepository(database);
+  const invoicesService = createInvoicesService({
+    repository: invoicesRepository,
+    clock,
+  });
+
+  const dashboardRepository = createSqliteDashboardRepository(database);
+  const dashboardService = createDashboardService({
+    repository: dashboardRepository,
+    clock,
+  });
+
   return {
     db: database,
     clock,
@@ -136,5 +195,12 @@ export function createContainer(
     discountsService,
     quotationTemplatesRepository,
     quotationTemplatesService,
+    subscriptionsRepository,
+    subscriptionsService,
+    billingService,
+    invoicesRepository,
+    invoicesService,
+    dashboardRepository,
+    dashboardService,
   };
 }

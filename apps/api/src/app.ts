@@ -17,6 +17,10 @@ import { planRoutes } from "./modules/plans/index.ts";
 import { taxRoutes } from "./modules/taxes/index.ts";
 import { discountRoutes } from "./modules/discounts/index.ts";
 import { quotationTemplateRoutes } from "./modules/quotationTemplates/index.ts";
+import { subscriptionRoutes } from "./modules/subscriptions/index.ts";
+import { billingRoutes } from "./modules/billing/index.ts";
+import { invoiceRoutes } from "./modules/invoices/index.ts";
+import { dashboardRoutes } from "./modules/dashboard/index.ts";
 
 export interface TokenPayload {
   id: string;
@@ -173,6 +177,18 @@ export async function buildApp(
   await discountRoutes(app, { service: container.discountsService });
   await quotationTemplateRoutes(app, {
     service: container.quotationTemplatesService,
+  });
+  await subscriptionRoutes(app, {
+    service: container.subscriptionsService,
+  });
+  await billingRoutes(app, {
+    service: container.billingService,
+  });
+  await invoiceRoutes(app, {
+    service: container.invoicesService,
+  });
+  await dashboardRoutes(app, {
+    service: container.dashboardService,
   });
 
   return app;
