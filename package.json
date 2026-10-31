@@ -12,7 +12,8 @@
     "typecheck": "bun --filter '*' typecheck",
     "lint": "eslint .",
     "test": "bun test",
-    "seed": "bun --filter @brightloop/api seed"
+    "seed": "bun --filter @brightloop/api seed",
+    "db:init": "bun --filter @brightloop/api db:generate && bun --filter @brightloop/api db:push"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0",

@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "typecheck": "tsc --noEmit",
-    "seed": "bun run src/db/seed.ts"
+    "seed": "bun run src/db/seed.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@brightloop/shared": "workspace:*",
