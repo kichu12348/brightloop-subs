@@ -5,6 +5,7 @@ import Fastify, {
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
+import websocket from "@fastify/websocket";
 import { Type } from "@sinclair/typebox";
 import { env } from "./config/env.ts";
 import { AppError } from "./errors/appError.ts";
@@ -21,6 +22,7 @@ import { subscriptionRoutes } from "./modules/subscriptions/index.ts";
 import { billingRoutes } from "./modules/billing/index.ts";
 import { invoiceRoutes } from "./modules/invoices/index.ts";
 import { dashboardRoutes } from "./modules/dashboard/index.ts";
+import { realtimeRoutes } from "./modules/realtime/index.ts";
 
 export interface TokenPayload {
   id: string;
@@ -47,6 +49,7 @@ const PUBLIC_ROUTES = new Set([
   "/api/auth/login",
   "/api/auth/forgot-password",
   "/api/auth/reset-password",
+  "/api/ws",
 ]);
 
 export function requireRole(...allowedRoles: readonly Role[]) {
@@ -80,6 +83,8 @@ export async function buildApp(
   await app.register(jwt, {
     secret: env.JWT_SECRET,
   });
+
+  await app.register(websocket);
 
   app.addHook("onRequest", async (request, _reply) => {
     const urlPath = request.url.split("?")[0] ?? "";
@@ -189,6 +194,10 @@ export async function buildApp(
   });
   await dashboardRoutes(app, {
     service: container.dashboardService,
+  });
+  await realtimeRoutes(app, {
+    hub: container.realtimeHub,
+    clock: container.clock,
   });
 
   await app.ready();

@@ -95,3 +95,17 @@ export const ErrorCode = {
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 
+export const RealtimeEventType = {
+  Connected: "connected",
+  SubscriptionCreated: "subscription.created",
+  SubscriptionStatusChanged: "subscription.status_changed",
+  InvoiceCreated: "invoice.created",
+  InvoiceStatusChanged: "invoice.status_changed",
+  PaymentRecorded: "payment.recorded",
+  BillingRunCompleted: "billing.run_completed",
+} as const;
+
+export type RealtimeEventType =
+  (typeof RealtimeEventType)[keyof typeof RealtimeEventType];
+
+

@@ -5,6 +5,7 @@ import {
   ErrorCode,
   Role,
   InvoiceStatus,
+  RealtimeEventType,
 } from "@brightloop/shared";
 import { AppError } from "../../errors/appError.ts";
 import type { Clock } from "../../lib/clock.ts";
@@ -18,10 +19,12 @@ import type {
   InvoiceSummaryRecord,
   PaymentRecord,
 } from "./repository.ts";
+import type { RealtimePublisher } from "../realtime/index.ts";
 
 export interface InvoicesServiceDependencies {
   repository: InvoicesRepository;
   clock: Clock;
+  realtime?: RealtimePublisher;
 }
 
 export interface InvoicesService {
@@ -134,7 +137,8 @@ export function createInvoicesService(
         throw new AppError(ErrorCode.NotFound, "Invoice not found", 404);
       }
 
-      validateInvoiceTransition(invoice.status, toStatus);
+      const fromStatus = invoice.status;
+      validateInvoiceTransition(fromStatus, toStatus);
 
       const now = deps.clock.nowMs();
       await deps.repository.updateInvoiceStatus(id, toStatus, now);
@@ -143,6 +147,19 @@ export function createInvoicesService(
       if (!updated) {
         throw new AppError(ErrorCode.NotFound, "Invoice not found", 404);
       }
+
+      deps.realtime?.publish({
+        type: RealtimeEventType.InvoiceStatusChanged,
+        timestampMs: now,
+        customerId: updated.customerId,
+        payload: {
+          id: updated.id,
+          customerId: updated.customerId,
+          fromStatus,
+          toStatus: updated.status,
+        },
+      });
+
       return updated;
     },
 
@@ -178,7 +195,7 @@ export function createInvoicesService(
       const now = deps.clock.nowMs();
       const paymentId = crypto.randomUUID();
 
-      return deps.repository.recordPayment(
+      const payment = await deps.repository.recordPayment(
         {
           id: paymentId,
           invoiceId,
@@ -194,6 +211,35 @@ export function createInvoicesService(
         allocation.shouldMarkPaid,
         now,
       );
+
+      deps.realtime?.publish({
+        type: RealtimeEventType.PaymentRecorded,
+        timestampMs: now,
+        customerId: invoice.customerId,
+        payload: {
+          id: payment.id,
+          invoiceId: payment.invoiceId,
+          customerId: payment.customerId,
+          amountPaise: payment.amountPaise,
+          method: payment.method,
+        },
+      });
+
+      if (allocation.shouldMarkPaid) {
+        deps.realtime?.publish({
+          type: RealtimeEventType.InvoiceStatusChanged,
+          timestampMs: now,
+          customerId: invoice.customerId,
+          payload: {
+            id: invoice.id,
+            customerId: invoice.customerId,
+            fromStatus: invoice.status,
+            toStatus: InvoiceStatus.Paid,
+          },
+        });
+      }
+
+      return payment;
     },
   };
 }

@@ -5,6 +5,7 @@ import {
   ErrorCode,
   Role,
   SubscriptionStatus,
+  RealtimeEventType,
 } from "@brightloop/shared";
 import { AppError } from "../../errors/appError.ts";
 import type { Clock } from "../../lib/clock.ts";
@@ -22,6 +23,7 @@ import type { ProductsService } from "../products/service.ts";
 import type { TaxesService } from "../taxes/service.ts";
 import type { DiscountsService } from "../discounts/service.ts";
 import type { QuotationTemplatesService } from "../quotationTemplates/service.ts";
+import type { RealtimePublisher } from "../realtime/index.ts";
 
 export interface SubscriptionsServiceDependencies {
   repository: SubscriptionsRepository;
@@ -32,6 +34,7 @@ export interface SubscriptionsServiceDependencies {
   discountsService: DiscountsService;
   quotationTemplatesService: QuotationTemplatesService;
   clock: Clock;
+  realtime?: RealtimePublisher;
 }
 
 export interface SubscriptionsService {
@@ -231,7 +234,7 @@ export function createSubscriptionsService(
       const subNumber = await deps.repository.generateSubNumber();
       const subscriptionId = crypto.randomUUID();
 
-      return deps.repository.createSubscription({
+      const created = await deps.repository.createSubscription({
         id: subscriptionId,
         subNumber,
         customerId: input.customerId,
@@ -247,6 +250,20 @@ export function createSubscriptionsService(
         updatedAt: now,
         lines: lineRecords,
       });
+
+      deps.realtime?.publish({
+        type: RealtimeEventType.SubscriptionCreated,
+        timestampMs: now,
+        customerId: created.customerId,
+        payload: {
+          id: created.id,
+          subNumber: created.subNumber,
+          customerId: created.customerId,
+          status: created.status,
+        },
+      });
+
+      return created;
     },
 
     async getSubscriptionById(
@@ -346,9 +363,10 @@ export function createSubscriptionsService(
         }
       }
 
+      const fromStatus = sub.status;
       const today = deps.clock.todayIso();
       validateSubscriptionTransition({
-        fromStatus: sub.status,
+        fromStatus,
         toStatus,
         plan: sub.plan,
         currentDate: today,
@@ -379,6 +397,19 @@ export function createSubscriptionsService(
           404,
         );
       }
+
+      deps.realtime?.publish({
+        type: RealtimeEventType.SubscriptionStatusChanged,
+        timestampMs: now,
+        customerId: updated.customerId,
+        payload: {
+          id: updated.id,
+          customerId: updated.customerId,
+          fromStatus,
+          toStatus: updated.status,
+        },
+      });
+
       return updated;
     },
   };

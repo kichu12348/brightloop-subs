@@ -65,14 +65,20 @@ import {
   type DashboardRepository,
   type DashboardService,
 } from "./modules/dashboard/index.ts";
+import {
+  createRealtimeHub,
+  type RealtimeHub,
+} from "./modules/realtime/index.ts";
 
 export interface AppDependencies {
   db: AppDatabase;
   clock: Clock;
   mailer: Mailer;
+  realtimeHub?: RealtimeHub;
 }
 
 export interface AppContainer extends AppDependencies {
+  realtimeHub: RealtimeHub;
   authRepository: AuthRepository;
   authService: AuthService;
   usersRepository: UsersRepository;
@@ -102,6 +108,7 @@ export function createContainer(
   const database = overrides.db ?? db;
   const clock = overrides.clock ?? systemClock;
   const mailer = overrides.mailer ?? new InMemoryMailer();
+  const realtimeHub = overrides.realtimeHub ?? createRealtimeHub();
 
   const authRepository = createSqliteAuthRepository(database);
   const authService = createAuthService({
@@ -158,17 +165,20 @@ export function createContainer(
     discountsService,
     quotationTemplatesService,
     clock,
+    realtime: realtimeHub,
   });
 
   const billingService = createBillingService({
     db: database,
     clock,
+    realtime: realtimeHub,
   });
 
   const invoicesRepository = createSqliteInvoicesRepository(database);
   const invoicesService = createInvoicesService({
     repository: invoicesRepository,
     clock,
+    realtime: realtimeHub,
   });
 
   const dashboardRepository = createSqliteDashboardRepository(database);
@@ -181,6 +191,7 @@ export function createContainer(
     db: database,
     clock,
     mailer,
+    realtimeHub,
     authRepository,
     authService,
     usersRepository,

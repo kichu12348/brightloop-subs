@@ -19,6 +19,7 @@ import {
   type DiscountScope,
   SubscriptionStatus,
   InvoiceStatus,
+  RealtimeEventType,
 } from "@brightloop/shared";
 import type { Clock } from "../../lib/clock.ts";
 import { advanceBillingDate, addDaysIso } from "./periodStrategies.ts";
@@ -27,10 +28,12 @@ import {
   type InvoiceLineInput,
 } from "./invoiceCalculator.ts";
 import type { DiscountData } from "./discountStrategies.ts";
+import type { RealtimePublisher } from "../realtime/index.ts";
 
 export interface BillingServiceDependencies {
   db: AppDatabase;
   clock: Clock;
+  realtime?: RealtimePublisher;
 }
 
 export interface BillingService {
@@ -72,6 +75,15 @@ export function createBillingService(
       for (const candidate of candidateSubs) {
         processedCount += 1;
         try {
+          const createdInThisSub: Array<{
+            id: string;
+            subscriptionId: string;
+            customerId: string;
+            totalPaise: number;
+            periodStart: string;
+            periodEnd: string;
+          }> = [];
+
           deps.db.transaction((tx) => {
             const sub = tx
               .select()
@@ -268,6 +280,14 @@ export function createBillingService(
               }
 
               invoicesCreated += 1;
+              createdInThisSub.push({
+                id: insertedInvoice.id,
+                subscriptionId: sub.id,
+                customerId: sub.customerId,
+                totalPaise: calculated.totalAmountPaise,
+                periodStart,
+                periodEnd,
+              });
 
               for (const cl of calculated.lines) {
                 tx.insert(invoiceLines)
@@ -323,6 +343,22 @@ export function createBillingService(
               }
             }
           });
+
+          for (const inv of createdInThisSub) {
+            deps.realtime?.publish({
+              type: RealtimeEventType.InvoiceCreated,
+              timestampMs: nowMs,
+              customerId: inv.customerId,
+              payload: {
+                id: inv.id,
+                subscriptionId: inv.subscriptionId,
+                customerId: inv.customerId,
+                totalPaise: inv.totalPaise,
+                periodStart: inv.periodStart,
+                periodEnd: inv.periodEnd,
+              },
+            });
+          }
         } catch (err) {
           failures.push({
             subscriptionId: candidate.id,
@@ -331,7 +367,7 @@ export function createBillingService(
         }
       }
 
-      return {
+      const result: BillingRunResult = {
         targetDate: today,
         processedCount,
         invoicesCreated,
@@ -339,6 +375,18 @@ export function createBillingService(
         skippedDuplicates,
         failures,
       };
+
+      deps.realtime?.publish({
+        type: RealtimeEventType.BillingRunCompleted,
+        timestampMs: nowMs,
+        payload: {
+          invoicesCreated,
+          subscriptionsClosed,
+          targetDate: today,
+        },
+      });
+
+      return result;
     },
   };
 }
