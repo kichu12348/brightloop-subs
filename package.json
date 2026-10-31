@@ -1,0 +1,23 @@
+{
+  "name": "brightloop-subs",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "private": true,
+  "scripts": {
+    "dev:api": "bun --filter @brightloop/api dev",
+    "dev:web": "bun --filter @brightloop/web dev",
+    "typecheck": "bun --filter '*' typecheck",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "eslint": "^10.14.0",
+    "typescript-eslint": "^8.72.1"
+  },
+  "peerDependencies": {
+    "typescript": "^7.0.2"
+  }
+}
