@@ -137,6 +137,7 @@ export const subscriptions = sqliteTable(
   "subscriptions",
   {
     id: text("id").primaryKey(),
+    subNumber: text("sub_number").notNull().unique(),
     customerId: text("customer_id")
       .notNull()
       .references(() => users.id),
@@ -148,6 +149,8 @@ export const subscriptions = sqliteTable(
     endDate: text("end_date"),
     nextBillingDate: text("next_billing_date"),
     discountId: text("discount_id").references(() => discounts.id),
+    paymentTermsDays: integer("payment_terms_days").notNull().default(30),
+    templateId: text("template_id").references(() => quotationTemplates.id),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
     archivedAt: integer("archived_at"),
@@ -169,6 +172,7 @@ export const subscriptionLines = sqliteTable("subscription_lines", {
   variantId: text("variant_id").references(() => productVariants.id),
   quantity: integer("quantity").notNull().default(1),
   unitPricePaise: integer("unit_price_paise").notNull(),
+  taxId: text("tax_id").references(() => taxes.id),
   createdAt: integer("created_at").notNull(),
 });
 
@@ -238,6 +242,7 @@ export const payments = sqliteTable(
     amountPaise: integer("amount_paise").notNull(),
     method: text("method").notNull(),
     reference: text("reference"),
+    paymentDate: text("payment_date"),
     recordedBy: text("recorded_by")
       .notNull()
       .references(() => users.id),
@@ -358,6 +363,7 @@ CREATE TABLE IF NOT EXISTS quotation_template_lines (
 
 CREATE TABLE IF NOT EXISTS subscriptions (
   id TEXT PRIMARY KEY,
+  sub_number TEXT NOT NULL UNIQUE,
   customer_id TEXT NOT NULL REFERENCES users(id),
   plan_id TEXT NOT NULL REFERENCES plans(id),
   status TEXT NOT NULL,
@@ -365,6 +371,8 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   end_date TEXT,
   next_billing_date TEXT,
   discount_id TEXT REFERENCES discounts(id),
+  payment_terms_days INTEGER NOT NULL DEFAULT 30,
+  template_id TEXT REFERENCES quotation_templates(id),
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   archived_at INTEGER
@@ -377,6 +385,7 @@ CREATE TABLE IF NOT EXISTS subscription_lines (
   variant_id TEXT REFERENCES product_variants(id),
   quantity INTEGER NOT NULL DEFAULT 1,
   unit_price_paise INTEGER NOT NULL,
+  tax_id TEXT REFERENCES taxes(id),
   created_at INTEGER NOT NULL
 );
 
@@ -418,6 +427,7 @@ CREATE TABLE IF NOT EXISTS payments (
   amount_paise INTEGER NOT NULL,
   method TEXT NOT NULL,
   reference TEXT,
+  payment_date TEXT,
   recorded_by TEXT NOT NULL REFERENCES users(id),
   created_at INTEGER NOT NULL
 );
