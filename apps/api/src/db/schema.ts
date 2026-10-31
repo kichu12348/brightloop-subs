@@ -32,8 +32,9 @@ export const products = sqliteTable("products", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(),
-  description: text("description"),
-  basePricePaise: integer("base_price_paise").notNull(),
+  salesPricePaise: integer("sales_price_paise").notNull(),
+  costPricePaise: integer("cost_price_paise").notNull().default(0),
+  notes: text("notes"),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
   archivedAt: integer("archived_at"),
@@ -54,14 +55,13 @@ export const productVariants = sqliteTable("product_variants", {
 
 export const plans = sqliteTable("plans", {
   id: text("id").primaryKey(),
-  productId: text("product_id")
-    .notNull()
-    .references(() => products.id),
+  productId: text("product_id").references(() => products.id),
   name: text("name").notNull(),
+  pricePaise: integer("price_paise").notNull(),
   billingPeriod: text("billing_period").notNull(),
   minQuantity: integer("min_quantity").notNull().default(1),
-  startDate: text("start_date"),
-  endDate: text("end_date"),
+  availableFrom: text("available_from"),
+  availableTo: text("available_to"),
   autoCloseOnEnd: integer("auto_close_on_end", { mode: "boolean" })
     .notNull()
     .default(false),
@@ -82,7 +82,7 @@ export const plans = sqliteTable("plans", {
 export const taxes = sqliteTable("taxes", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
-  rateBasisPoints: integer("rate_basis_points").notNull(),
+  rateBps: integer("rate_bps").notNull(),
   isActive: integer("is_active", { mode: "boolean" })
     .notNull()
     .default(true),
@@ -93,7 +93,7 @@ export const taxes = sqliteTable("taxes", {
 
 export const discounts = sqliteTable("discounts", {
   id: text("id").primaryKey(),
-  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
   kind: text("kind").notNull(),
   value: integer("value").notNull(),
   scope: text("scope").notNull(),
@@ -113,26 +113,25 @@ export const quotationTemplates = sqliteTable("quotation_templates", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   planId: text("plan_id").references(() => plans.id),
+  validityDays: integer("validity_days").notNull().default(30),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
   archivedAt: integer("archived_at"),
 });
 
-export const quotationTemplateLines = sqliteTable(
-  "quotation_template_lines",
-  {
-    id: text("id").primaryKey(),
-    templateId: text("template_id")
-      .notNull()
-      .references(() => quotationTemplates.id),
-    productId: text("product_id")
-      .notNull()
-      .references(() => products.id),
-    variantId: text("variant_id").references(() => productVariants.id),
-    quantity: integer("quantity").notNull().default(1),
-    createdAt: integer("created_at").notNull(),
-  },
-);
+export const quotationTemplateLines = sqliteTable("quotation_template_lines", {
+  id: text("id").primaryKey(),
+  templateId: text("template_id")
+    .notNull()
+    .references(() => quotationTemplates.id),
+  productId: text("product_id")
+    .notNull()
+    .references(() => products.id),
+  variantId: text("variant_id").references(() => productVariants.id),
+  quantity: integer("quantity").notNull().default(1),
+  taxId: text("tax_id").references(() => taxes.id),
+  createdAt: integer("created_at").notNull(),
+});
 
 export const subscriptions = sqliteTable(
   "subscriptions",
@@ -272,8 +271,9 @@ CREATE TABLE IF NOT EXISTS products (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   type TEXT NOT NULL,
-  description TEXT,
-  base_price_paise INTEGER NOT NULL,
+  sales_price_paise INTEGER NOT NULL,
+  cost_price_paise INTEGER NOT NULL DEFAULT 0,
+  notes TEXT,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   archived_at INTEGER
@@ -292,12 +292,13 @@ CREATE TABLE IF NOT EXISTS product_variants (
 
 CREATE TABLE IF NOT EXISTS plans (
   id TEXT PRIMARY KEY,
-  product_id TEXT NOT NULL REFERENCES products(id),
+  product_id TEXT REFERENCES products(id),
   name TEXT NOT NULL,
+  price_paise INTEGER NOT NULL,
   billing_period TEXT NOT NULL,
   min_quantity INTEGER NOT NULL DEFAULT 1,
-  start_date TEXT,
-  end_date TEXT,
+  available_from TEXT,
+  available_to TEXT,
   auto_close_on_end INTEGER NOT NULL DEFAULT 0,
   can_close_early INTEGER NOT NULL DEFAULT 0,
   can_pause INTEGER NOT NULL DEFAULT 0,
@@ -310,7 +311,7 @@ CREATE TABLE IF NOT EXISTS plans (
 CREATE TABLE IF NOT EXISTS taxes (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
-  rate_basis_points INTEGER NOT NULL,
+  rate_bps INTEGER NOT NULL,
   is_active INTEGER NOT NULL DEFAULT 1,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
@@ -319,7 +320,7 @@ CREATE TABLE IF NOT EXISTS taxes (
 
 CREATE TABLE IF NOT EXISTS discounts (
   id TEXT PRIMARY KEY,
-  code TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
   kind TEXT NOT NULL,
   value INTEGER NOT NULL,
   scope TEXT NOT NULL,
@@ -339,6 +340,7 @@ CREATE TABLE IF NOT EXISTS quotation_templates (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   plan_id TEXT REFERENCES plans(id),
+  validity_days INTEGER NOT NULL DEFAULT 30,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   archived_at INTEGER
@@ -350,6 +352,7 @@ CREATE TABLE IF NOT EXISTS quotation_template_lines (
   product_id TEXT NOT NULL REFERENCES products(id),
   variant_id TEXT REFERENCES product_variants(id),
   quantity INTEGER NOT NULL DEFAULT 1,
+  tax_id TEXT REFERENCES taxes(id),
   created_at INTEGER NOT NULL
 );
 
@@ -426,4 +429,3 @@ CREATE INDEX IF NOT EXISTS invoices_customer_id_created_at_idx ON invoices(custo
 CREATE UNIQUE INDEX IF NOT EXISTS invoices_subscription_id_period_start_unique ON invoices(subscription_id, period_start);
 CREATE INDEX IF NOT EXISTS payments_invoice_id_idx ON payments(invoice_id);
 `;
-

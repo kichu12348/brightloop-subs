@@ -12,3 +12,22 @@ export const systemClock: Clock = {
   },
 };
 
+export class TestClock implements Clock {
+  private currentMs: number;
+
+  public constructor(initialMs: number = Date.now()) {
+    this.currentMs = initialMs;
+  }
+
+  public nowMs(): number {
+    return this.currentMs;
+  }
+
+  public todayIso(): string {
+    return new Date(this.currentMs).toISOString().slice(0, 10);
+  }
+
+  public advanceMs(ms: number): void {
+    this.currentMs += ms;
+  }
+}

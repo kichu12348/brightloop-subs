@@ -9,7 +9,14 @@ import { Type } from "@sinclair/typebox";
 import { env } from "./config/env.ts";
 import { AppError } from "./errors/appError.ts";
 import { ErrorCode, type Role } from "@brightloop/shared";
-import { createContainer, type AppDependencies } from "./container.ts";
+import { createContainer, type AppDependencies, type AppContainer } from "./container.ts";
+import { authRoutes } from "./modules/auth/index.ts";
+import { usersRoutes } from "./modules/users/index.ts";
+import { productRoutes } from "./modules/products/index.ts";
+import { planRoutes } from "./modules/plans/index.ts";
+import { taxRoutes } from "./modules/taxes/index.ts";
+import { discountRoutes } from "./modules/discounts/index.ts";
+import { quotationTemplateRoutes } from "./modules/quotationTemplates/index.ts";
 
 export interface TokenPayload {
   id: string;
@@ -21,6 +28,12 @@ declare module "@fastify/jwt" {
   interface FastifyJWT {
     payload: TokenPayload;
     user: TokenPayload;
+  }
+}
+
+declare module "fastify" {
+  interface FastifyInstance {
+    container: AppContainer;
   }
 }
 
@@ -44,7 +57,7 @@ export function requireRole(...allowedRoles: readonly Role[]) {
 export async function buildApp(
   depsOverrides: Partial<AppDependencies> = {},
 ): Promise<FastifyInstance> {
-  const _container = createContainer(depsOverrides);
+  const container = createContainer(depsOverrides);
 
   const app = Fastify({
     ajv: {
@@ -53,6 +66,8 @@ export async function buildApp(
       },
     },
   }).withTypeProvider<TypeBoxTypeProvider>();
+
+  app.decorate("container", container);
 
   await app.register(cors, {
     origin: env.CORS_ORIGIN,
@@ -149,6 +164,16 @@ export async function buildApp(
       return { status: "ok" as const };
     },
   );
+
+  await authRoutes(app, { service: container.authService });
+  await usersRoutes(app, { service: container.usersService });
+  await productRoutes(app, { service: container.productsService });
+  await planRoutes(app, { service: container.plansService });
+  await taxRoutes(app, { service: container.taxesService });
+  await discountRoutes(app, { service: container.discountsService });
+  await quotationTemplateRoutes(app, {
+    service: container.quotationTemplatesService,
+  });
 
   return app;
 }
