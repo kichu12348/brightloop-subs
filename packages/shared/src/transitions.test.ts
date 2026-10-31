@@ -80,12 +80,19 @@ describe("Subscription transitions", () => {
         SubscriptionStatus.Closed,
         SubscriptionStatus.Active,
       ),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       canTransition(
         SUBSCRIPTION_TRANSITIONS,
         SubscriptionStatus.Closed,
         SubscriptionStatus.Draft,
+      ),
+    ).toBe(false);
+    expect(
+      canTransition(
+        SUBSCRIPTION_TRANSITIONS,
+        SubscriptionStatus.Closed,
+        SubscriptionStatus.Paused,
       ),
     ).toBe(false);
   });

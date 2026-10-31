@@ -14,7 +14,7 @@ export const SUBSCRIPTION_TRANSITIONS: Record<
   [SubsStatus.Confirmed]: [SubsStatus.Active, SubsStatus.Closed],
   [SubsStatus.Active]: [SubsStatus.Paused, SubsStatus.Closed],
   [SubsStatus.Paused]: [SubsStatus.Active, SubsStatus.Closed],
-  [SubsStatus.Closed]: [],
+  [SubsStatus.Closed]: [SubsStatus.Active],
 };
 
 export const INVOICE_TRANSITIONS: Record<
