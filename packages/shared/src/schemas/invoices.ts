@@ -9,6 +9,18 @@ export const InvoiceStatusSchema = Type.Union([
 ]);
 export type InvoiceStatusType = Static<typeof InvoiceStatusSchema>;
 
+export const InvoiceQueryStatusSchema = Type.Union([
+  Type.Literal(InvoiceStatus.Draft),
+  Type.Literal(InvoiceStatus.Confirmed),
+  Type.Literal(InvoiceStatus.Paid),
+  Type.Literal(InvoiceStatus.Cancelled),
+  Type.Literal("Draft"),
+  Type.Literal("Confirmed"),
+  Type.Literal("Paid"),
+  Type.Literal("Cancelled"),
+]);
+export type InvoiceQueryStatus = Static<typeof InvoiceQueryStatusSchema>;
+
 export const PaymentMethodSchema = Type.Union([
   Type.Literal(PaymentMethod.BankTransfer),
   Type.Literal(PaymentMethod.Card),
@@ -138,7 +150,7 @@ export const InvoiceListQuerySchema = Type.Object(
     pageSize: Type.Optional(
       Type.Integer({ minimum: 1, maximum: 100, default: 20 }),
     ),
-    status: Type.Optional(InvoiceStatusSchema),
+    status: Type.Optional(InvoiceQueryStatusSchema),
     customerId: Type.Optional(Type.String()),
     overdueOnly: Type.Optional(Type.Boolean()),
   },

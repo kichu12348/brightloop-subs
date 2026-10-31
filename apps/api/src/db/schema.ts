@@ -158,23 +158,39 @@ export const subscriptions = sqliteTable(
   (table) => [
     index("subscriptions_status_idx").on(table.status),
     index("subscriptions_next_billing_date_idx").on(table.nextBillingDate),
+    index("subscriptions_status_next_billing_date_idx").on(
+      table.status,
+      table.nextBillingDate,
+    ),
+    index("subscriptions_customer_id_idx").on(table.customerId),
+    index("subscriptions_created_at_idx").on(table.createdAt),
+    index("subscriptions_status_created_at_idx").on(
+      table.status,
+      table.createdAt,
+    ),
   ],
 );
 
-export const subscriptionLines = sqliteTable("subscription_lines", {
-  id: text("id").primaryKey(),
-  subscriptionId: text("subscription_id")
-    .notNull()
-    .references(() => subscriptions.id),
-  productId: text("product_id")
-    .notNull()
-    .references(() => products.id),
-  variantId: text("variant_id").references(() => productVariants.id),
-  quantity: integer("quantity").notNull().default(1),
-  unitPricePaise: integer("unit_price_paise").notNull(),
-  taxId: text("tax_id").references(() => taxes.id),
-  createdAt: integer("created_at").notNull(),
-});
+export const subscriptionLines = sqliteTable(
+  "subscription_lines",
+  {
+    id: text("id").primaryKey(),
+    subscriptionId: text("subscription_id")
+      .notNull()
+      .references(() => subscriptions.id),
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id),
+    variantId: text("variant_id").references(() => productVariants.id),
+    quantity: integer("quantity").notNull().default(1),
+    unitPricePaise: integer("unit_price_paise").notNull(),
+    taxId: text("tax_id").references(() => taxes.id),
+    createdAt: integer("created_at").notNull(),
+  },
+  (table) => [
+    index("subscription_lines_subscription_id_idx").on(table.subscriptionId),
+  ],
+);
 
 export const invoices = sqliteTable(
   "invoices",
@@ -209,25 +225,33 @@ export const invoices = sqliteTable(
       table.subscriptionId,
       table.periodStart,
     ),
+    index("invoices_created_at_idx").on(table.createdAt),
+    index("invoices_subscription_id_idx").on(table.subscriptionId),
   ],
 );
 
-export const invoiceLines = sqliteTable("invoice_lines", {
-  id: text("id").primaryKey(),
-  invoiceId: text("invoice_id")
-    .notNull()
-    .references(() => invoices.id),
-  productId: text("product_id")
-    .notNull()
-    .references(() => products.id),
-  variantId: text("variant_id").references(() => productVariants.id),
-  description: text("description").notNull(),
-  quantity: integer("quantity").notNull(),
-  unitPricePaise: integer("unit_price_paise").notNull(),
-  taxRateBasisPoints: integer("tax_rate_basis_points").notNull().default(0),
-  lineTotalPaise: integer("line_total_paise").notNull(),
-  createdAt: integer("created_at").notNull(),
-});
+export const invoiceLines = sqliteTable(
+  "invoice_lines",
+  {
+    id: text("id").primaryKey(),
+    invoiceId: text("invoice_id")
+      .notNull()
+      .references(() => invoices.id),
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id),
+    variantId: text("variant_id").references(() => productVariants.id),
+    description: text("description").notNull(),
+    quantity: integer("quantity").notNull(),
+    unitPricePaise: integer("unit_price_paise").notNull(),
+    taxRateBasisPoints: integer("tax_rate_basis_points").notNull().default(0),
+    lineTotalPaise: integer("line_total_paise").notNull(),
+    createdAt: integer("created_at").notNull(),
+  },
+  (table) => [
+    index("invoice_lines_invoice_id_idx").on(table.invoiceId),
+  ],
+);
 
 export const payments = sqliteTable(
   "payments",
@@ -434,8 +458,16 @@ CREATE TABLE IF NOT EXISTS payments (
 
 CREATE INDEX IF NOT EXISTS subscriptions_status_idx ON subscriptions(status);
 CREATE INDEX IF NOT EXISTS subscriptions_next_billing_date_idx ON subscriptions(next_billing_date);
+CREATE INDEX IF NOT EXISTS subscriptions_status_next_billing_date_idx ON subscriptions(status, next_billing_date);
+CREATE INDEX IF NOT EXISTS subscriptions_customer_id_idx ON subscriptions(customer_id);
+CREATE INDEX IF NOT EXISTS subscriptions_created_at_idx ON subscriptions(created_at);
+CREATE INDEX IF NOT EXISTS subscriptions_status_created_at_idx ON subscriptions(status, created_at);
+CREATE INDEX IF NOT EXISTS subscription_lines_subscription_id_idx ON subscription_lines(subscription_id);
 CREATE INDEX IF NOT EXISTS invoices_status_due_date_idx ON invoices(status, due_date);
 CREATE INDEX IF NOT EXISTS invoices_customer_id_created_at_idx ON invoices(customer_id, created_at);
 CREATE UNIQUE INDEX IF NOT EXISTS invoices_subscription_id_period_start_unique ON invoices(subscription_id, period_start);
+CREATE INDEX IF NOT EXISTS invoices_created_at_idx ON invoices(created_at);
+CREATE INDEX IF NOT EXISTS invoices_subscription_id_idx ON invoices(subscription_id);
+CREATE INDEX IF NOT EXISTS invoice_lines_invoice_id_idx ON invoice_lines(invoice_id);
 CREATE INDEX IF NOT EXISTS payments_invoice_id_idx ON payments(invoice_id);
 `;

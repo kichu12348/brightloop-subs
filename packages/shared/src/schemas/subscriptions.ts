@@ -11,6 +11,22 @@ export const SubscriptionStatusSchema = Type.Union([
 ]);
 export type SubscriptionStatusType = Static<typeof SubscriptionStatusSchema>;
 
+export const SubscriptionQueryStatusSchema = Type.Union([
+  Type.Literal(SubscriptionStatus.Draft),
+  Type.Literal(SubscriptionStatus.Quotation),
+  Type.Literal(SubscriptionStatus.Confirmed),
+  Type.Literal(SubscriptionStatus.Active),
+  Type.Literal(SubscriptionStatus.Paused),
+  Type.Literal(SubscriptionStatus.Closed),
+  Type.Literal("Draft"),
+  Type.Literal("Quotation"),
+  Type.Literal("Confirmed"),
+  Type.Literal("Active"),
+  Type.Literal("Paused"),
+  Type.Literal("Closed"),
+]);
+export type SubscriptionQueryStatus = Static<typeof SubscriptionQueryStatusSchema>;
+
 export const SubscriptionLineInputSchema = Type.Object(
   {
     productId: Type.String({ minLength: 1 }),
@@ -136,7 +152,7 @@ export const SubscriptionListQuerySchema = Type.Object(
     pageSize: Type.Optional(
       Type.Integer({ minimum: 1, maximum: 100, default: 20 }),
     ),
-    status: Type.Optional(SubscriptionStatusSchema),
+    status: Type.Optional(SubscriptionQueryStatusSchema),
     customerId: Type.Optional(Type.String()),
     search: Type.Optional(Type.String()),
   },

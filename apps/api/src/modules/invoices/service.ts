@@ -47,6 +47,26 @@ export interface InvoicesService {
   ): Promise<PaymentRecord>;
 }
 
+function normalizeInvoiceStatus(
+  status: string | undefined,
+): InvoiceStatus | undefined {
+  if (!status) {
+    return undefined;
+  }
+  switch (status.toLowerCase()) {
+    case InvoiceStatus.Draft:
+      return InvoiceStatus.Draft;
+    case InvoiceStatus.Confirmed:
+      return InvoiceStatus.Confirmed;
+    case InvoiceStatus.Paid:
+      return InvoiceStatus.Paid;
+    case InvoiceStatus.Cancelled:
+      return InvoiceStatus.Cancelled;
+    default:
+      return undefined;
+  }
+}
+
 export function createInvoicesService(
   deps: InvoicesServiceDependencies,
 ): InvoicesService {
@@ -82,7 +102,7 @@ export function createInvoicesService(
 
       const { items, total } = await deps.repository.listInvoices({
         customerId: effectiveCustomerId,
-        status: query.status,
+        status: normalizeInvoiceStatus(query.status),
         overdueOnly: query.overdueOnly,
         todayIso: deps.clock.todayIso(),
         limit: pageSize,

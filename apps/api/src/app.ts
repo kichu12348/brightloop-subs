@@ -191,5 +191,7 @@ export async function buildApp(
     service: container.dashboardService,
   });
 
+  await app.ready();
+
   return app;
 }

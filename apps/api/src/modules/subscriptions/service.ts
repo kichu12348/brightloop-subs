@@ -56,6 +56,30 @@ export interface SubscriptionsService {
   ): Promise<SubscriptionDetailRecord>;
 }
 
+function normalizeSubscriptionStatus(
+  status: string | undefined,
+): SubscriptionStatus | undefined {
+  if (!status) {
+    return undefined;
+  }
+  switch (status.toLowerCase()) {
+    case SubscriptionStatus.Draft:
+      return SubscriptionStatus.Draft;
+    case SubscriptionStatus.Quotation:
+      return SubscriptionStatus.Quotation;
+    case SubscriptionStatus.Confirmed:
+      return SubscriptionStatus.Confirmed;
+    case SubscriptionStatus.Active:
+      return SubscriptionStatus.Active;
+    case SubscriptionStatus.Paused:
+      return SubscriptionStatus.Paused;
+    case SubscriptionStatus.Closed:
+      return SubscriptionStatus.Closed;
+    default:
+      return undefined;
+  }
+}
+
 export function createSubscriptionsService(
   deps: SubscriptionsServiceDependencies,
 ): SubscriptionsService {
@@ -264,7 +288,7 @@ export function createSubscriptionsService(
 
       const { items, total } = await deps.repository.listSubscriptions({
         customerId: effectiveCustomerId,
-        status: query.status,
+        status: normalizeSubscriptionStatus(query.status),
         search: query.search?.trim(),
         limit: pageSize,
         offset,
